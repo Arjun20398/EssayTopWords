@@ -33,7 +33,7 @@ public class EssayProcessController {
                                                 @RequestParam Integer maxWordCount) {
         long time = System.currentTimeMillis();
         Map<String, Long>
-            topWords = essayProcessingService.processUrlForMaxWordCountUsingFixedPool(essayUrlFile, maxWordCount);
+            topWords = essayProcessingService.processUrlForMaxWordCountUsingThreadPool(essayUrlFile, maxWordCount);
         System.out.println("Time taken " + (System.currentTimeMillis() - time));
         return new ResponseEntity<>(topWords, HttpStatus.OK);
     }

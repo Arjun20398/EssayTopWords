@@ -3,40 +3,18 @@ package firefly.utils;
 import firefly.constants.Constant;
 import firefly.exceptions.ValidationException;
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Scanner;
-import java.util.TreeMap;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.ByteArrayHttpMessageConverter;
-import org.springframework.http.converter.StringHttpMessageConverter;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
 
 @Slf4j
 public class CommonUtils {
@@ -69,7 +47,7 @@ public class CommonUtils {
         return linesFromFiles;
     }
 
-    public static List<String> findParagraphString(String htmlDocument){
+    public static List<String> findWordsInDocument(String htmlDocument){
         final Matcher matcher = Constant.PARA_PATTERN.matcher(htmlDocument);
         List<String> paragraphs = new ArrayList<>();
         while (matcher.find()) {
@@ -97,10 +75,10 @@ public class CommonUtils {
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    public static Map<String,Long> findTopKOccurrences(Map<String, Long> map){
+    public static Map<String,Long> findTopKOccurrences(Map<String, Long> map, Integer topCountValue) {
         return map.entrySet().stream()
             .sorted((wordCountOne, wordCountTwo) -> (int)(wordCountTwo.getValue() - wordCountOne.getValue()))
-            .limit(Constant.FINAL_COUNT_TO_RETURN)
+            .limit(topCountValue)
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 

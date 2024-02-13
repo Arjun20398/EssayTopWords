@@ -18,13 +18,13 @@ import org.springframework.web.client.RestTemplate;
 @Slf4j
 public class EssayReaderService {
 
-    private static RestTemplate restTemplate = new RestTemplate();
+    private static final RestTemplate restTemplate = new RestTemplate();
 
     @Autowired
     private DictionaryService dictionaryService;
 
     @Autowired
-    private EnGadgetService enGadgetService;
+    private DataCrawlingService dataCrawlingService;
 
     public EssayReaderService(){
         restTemplate.getMessageConverters().add(new ByteArrayHttpMessageConverter());
@@ -32,19 +32,19 @@ public class EssayReaderService {
     }
 
     @Async("customTaskExecutor")
-    public CompletableFuture<String> readEssaysOnline(String url){
-        return CompletableFuture.completedFuture(enGadgetService.getEssay(url));
+    public CompletableFuture<String> readEssaysOnlineAsync(String url){
+        return CompletableFuture.completedFuture(dataCrawlingService.getEssay(url));
     }
 
-    public String readEssaysOnlineSync(String url){
-        return enGadgetService.getEssay(url);
+    public String readEssaysOnline(String url){
+        return dataCrawlingService.getEssay(url);
     }
 
     @Async("customTaskExecutor")
     public CompletableFuture<List<String>> processEssaysFromHtml(List<String> htmlDocuments){
         return CompletableFuture.supplyAsync(() -> {
             String mergedHtmlDocuments = String.join(Constant.SPACE, htmlDocuments);
-            return CommonUtils.findParagraphString(mergedHtmlDocuments).stream()
+            return CommonUtils.findWordsInDocument(mergedHtmlDocuments).stream()
                 .filter(word -> dictionaryService.isValidWord(word)).collect(Collectors.toList());
         });
     }

@@ -2,6 +2,7 @@ package firefly.services;
 
 import firefly.config.JobFactory;
 import firefly.constants.Constant;
+import firefly.exceptions.TooManyRequestsError;
 import firefly.models.JobResponse;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,12 +27,16 @@ public class JobLauncherService {
     private final JobFactory jobFactory;
 
     public JobResponse launchJobs(String jobName, JobParameters jobParameters) {
-        JobResponse response = JobResponse.builder().status(Boolean.FALSE).build();
+        JobResponse response = JobResponse.builder()
+            .maxWordCount(new HashMap<>())
+            .status(Boolean.FALSE).build();
         try {
             JobExecution jobExecution = jobLauncher.run(jobFactory.getJobByName(jobName), jobParameters);
-            response.setStatus(jobExecution.getStatus().equals(BatchStatus.COMPLETED));
-            response.setMaxWordCount((Map<String,Long>)jobExecution.getExecutionContext()
-                .get(Constant.FINAL_WORD_COUNT));
+            if(jobExecution.getStatus().equals(BatchStatus.COMPLETED)) {
+                response.setStatus(jobExecution.getStatus().equals(BatchStatus.COMPLETED));
+                response.setMaxWordCount((Map<String,Long>)jobExecution.getExecutionContext()
+                    .get(Constant.FINAL_WORD_COUNT));
+            }
         } catch (JobExecutionAlreadyRunningException | JobRestartException |
                 JobInstanceAlreadyCompleteException | JobParametersInvalidException e) {
             log.error("Error message : {} ", e.getMessage());

@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class DictionaryService {
 
-    private HashSet<String> validWords = new HashSet<>();
+    private final HashSet<String> validWords = new HashSet<>();
 
     public DictionaryService() {
         List<String> linesFromFiles = CommonUtils.readLocalFile(Constant.DICTIONARY_FILE);

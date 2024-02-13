@@ -1,15 +1,13 @@
 package firefly.jobs;
 
 import firefly.constants.Constant;
-import firefly.jobs.processors.EssayApiCaller;
-import firefly.jobs.processors.DocumentProcessor;
+import firefly.jobs.processors.EssayProcessor;
 import firefly.jobs.processors.WordCountProcessor;
-import firefly.jobs.readers.DocumentProcessReader;
-import firefly.jobs.readers.UrlReader;
+import firefly.jobs.readers.EssayUrlReader;
 import firefly.jobs.readers.WordCountReader;
 import firefly.jobs.writers.EssayWordCountWriter;
-import firefly.jobs.writers.ProcessedDocumentWriter;
-import firefly.jobs.writers.UrlDocumentWriter;
+import firefly.jobs.writers.EssayProcessedWriter;
+import firefly.services.DictionaryService;
 import firefly.services.EssayReaderService;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +26,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.TaskExecutor;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 @Configuration
 @EnableBatchProcessing
@@ -37,6 +34,9 @@ public class EssayProcessJob {
 
     @Autowired
     private EssayReaderService essayReaderService;
+
+    @Autowired
+    private DictionaryService dictionaryService;
 
     @Bean("EssayProcessJob")
     public Job essayProcessJob(JobBuilderFactory jobBuilderFactory,
@@ -47,48 +47,30 @@ public class EssayProcessJob {
         return jobBuilderFactory.get("EssayProcessJobBuilder")
             .incrementer(new RunIdIncrementer())
             .start(urlReadStep)
-            .next(documentProcessStep)
             .next(wordCountStep)
             .build();
     }
 
     @Bean("urlReadStep")
     public Step startStep(StepBuilderFactory stepBuilderFactory,
-                          @Qualifier("SimpleAsyncTaskExecutor") TaskExecutor simpleAsyncTaskExecutor,
-                          @Qualifier("urlsReader") UrlReader urlReader,
-                          @Qualifier("essayApiCaller") EssayApiCaller essayApiCaller,
-                          @Qualifier("urlDocumentWriter") UrlDocumentWriter urlDocumentWriter){
+                          TaskExecutor simpleAsyncTaskExecutor,
+                          @Qualifier("urlsReader") EssayUrlReader essayUrlReader,
+                          @Qualifier("essayProcessor") EssayProcessor essayProcessor,
+                          @Qualifier("essayProcessedWriter") EssayProcessedWriter essayProcessedWriter){
 
         return stepBuilderFactory.get("urlReadStep")
-            .<List<String>, List<String>>chunk(Constant.API_CALL_CHUNK_SIZE)
-            .reader(urlReader)
-            .processor(essayApiCaller)
-            .writer(urlDocumentWriter)
-            .listener(promotionListener())
-            .taskExecutor(simpleAsyncTaskExecutor)
-            .build();
-    }
-
-    @Bean("documentProcessStep")
-    public Step documentProcessStep(StepBuilderFactory stepBuilderFactory,
-                          @Qualifier("SimpleAsyncTaskExecutor") TaskExecutor simpleAsyncTaskExecutor,
-                          @Qualifier("documentProcessReader") DocumentProcessReader documentProcessReader,
-                          @Qualifier("documentProcessor") DocumentProcessor documentProcessor,
-                          @Qualifier("processedDocumentWriter") ProcessedDocumentWriter processedDocumentWriter){
-        return stepBuilderFactory.get("documentProcessStep")
-            .<List<String>, Map<String,Long>>chunk(Constant.PROCESS_DOCUMENT_CHUNK_SIZE)
-            .reader(documentProcessReader)
-            .processor(documentProcessor)
-            .writer(processedDocumentWriter)
+            .<List<String>, Map<String,Long>>chunk(Constant.API_CALL_CHUNK_SIZE)
+            .reader(essayUrlReader)
+            .processor(essayProcessor)
+            .writer(essayProcessedWriter)
             .listener(promotionListener())
             .taskExecutor(simpleAsyncTaskExecutor)
             .build();
     }
 
     @Bean("countWordStep")
-    public Step countWordStep(TaskExecutor taskExecutor,
-                          StepBuilderFactory stepBuilderFactory,
-                          @Qualifier("SimpleAsyncTaskExecutor") TaskExecutor simpleAsyncTaskExecutor,
+    public Step countWordStep(StepBuilderFactory stepBuilderFactory,
+                          TaskExecutor simpleAsyncTaskExecutor,
                           @Qualifier("wordCountReader") WordCountReader wordCountReader,
                           @Qualifier("wordCountProcessor") WordCountProcessor wordCountProcessor,
                           @Qualifier("essayWordWriterSynchronized") SynchronizedItemStreamWriter<Map<String,Long>> wordProcessor){
@@ -103,24 +85,23 @@ public class EssayProcessJob {
     }
 
     /*
-    step 1
-    read urls and create list of words
+    step: read urls and create list of words
      */
 
     @Bean(name = "urlsReader", destroyMethod="")
     @StepScope
-    public UrlReader urlReader() {
-        return new UrlReader();
+    public EssayUrlReader urlReader() {
+        return new EssayUrlReader();
     }
 
-    @Bean("essayApiCaller")
-    public EssayApiCaller essayApiCaller(){
-        return new EssayApiCaller(essayReaderService);
+    @Bean("essayProcessor")
+    public EssayProcessor essayProcessor(){
+        return new EssayProcessor(essayReaderService, dictionaryService);
     }
 
-    @Bean("urlDocumentWriter")
-    public UrlDocumentWriter urlDocumentWriter(){
-        return new UrlDocumentWriter();
+    @Bean("essayProcessedWriter")
+    public EssayProcessedWriter essayProcessedWriter(){
+        return new EssayProcessedWriter();
     }
 
     @Bean
@@ -133,28 +114,7 @@ public class EssayProcessJob {
     }
 
     /*
-    step 2
-    processing a document
-     */
-
-    @Bean("documentProcessReader")
-    public DocumentProcessReader documentProcessReader(){
-        return new DocumentProcessReader();
-    }
-
-    @Bean("documentProcessor")
-    public DocumentProcessor documentProcessor(){
-        return new DocumentProcessor(essayReaderService);
-    }
-
-    @Bean("processedDocumentWriter")
-    public ProcessedDocumentWriter processedDocumentWriter() {
-        return new ProcessedDocumentWriter();
-    }
-
-    /*
-    step 3
-    aggregate word count
+    step: aggregate word count
      */
 
     @Bean("wordCountReader")
@@ -178,12 +138,5 @@ public class EssayProcessJob {
             new SynchronizedItemStreamWriter<>();
         synchronizedItemStreamWriter.setDelegate(new EssayWordCountWriter(Constant.ZERO));
         return synchronizedItemStreamWriter;
-    }
-
-    @Bean("SimpleAsyncTaskExecutor")
-    public TaskExecutor getSimpleAsyncTaskExecutor(){
-        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(4);
-        return executor;
     }
 }

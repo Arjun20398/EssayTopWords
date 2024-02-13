@@ -1,13 +1,9 @@
 package firefly.jobs.readers;
 
-import firefly.constants.Constant;
-import firefly.models.EssayMetaData;
 import firefly.utils.CommonUtils;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,7 +11,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @StepScope
-public class UrlReader implements ItemReader<List<String>> {
+public class EssayUrlReader implements ItemReader<List<String>> {
 
     private int next = 0;
     private List<List<String>> batchedEssayUrls = new ArrayList<>();

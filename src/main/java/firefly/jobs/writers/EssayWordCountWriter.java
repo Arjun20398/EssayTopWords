@@ -7,14 +7,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.batch.core.StepExecution;
-import org.springframework.batch.core.annotation.BeforeStep;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.ExecutionContext;
 import org.springframework.batch.item.ItemStreamException;
 import org.springframework.batch.item.ItemStreamWriter;
-import org.springframework.batch.item.ItemWriter;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @Slf4j
 @AllArgsConstructor
@@ -30,7 +26,7 @@ public class EssayWordCountWriter implements ItemStreamWriter<Map<String,Long>> 
 
 
     @Override
-    public synchronized void write(List<? extends Map<String,Long>> list) throws Exception {
+    public void write(List<? extends Map<String,Long>> list) throws Exception {
         Map<String,Long> finalWordCount = (Map<String,Long>) executionContext.get(
             Constant.FINAL_WORD_COUNT);
         log.info("writing for batch: {}, batchSize: {}", index++, list.size());

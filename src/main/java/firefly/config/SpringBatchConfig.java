@@ -9,22 +9,17 @@ import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.batch.core.launch.JobOperator;
 import org.springframework.batch.core.launch.support.SimpleJobOperator;
 import org.springframework.batch.core.repository.JobRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.batch.BatchProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.task.TaskExecutor;
 
 @Configuration
 @EnableBatchProcessing
 @EnableConfigurationProperties(BatchProperties.class)
-public class BatchConfig {
+public class SpringBatchConfig {
 
     private final JobRegistry jobRegistry = new MapJobRegistry();
-
-    @Autowired
-    private TaskExecutor taskExecutor;
 
     @Bean
     public JobRegistryBeanPostProcessor jobRegistryBeanPostProcessor() {
@@ -43,11 +38,4 @@ public class BatchConfig {
         jobOperator.setJobExplorer(jobExplorer);
         return jobOperator;
     }
-
-//    @Bean
-//    public JobLauncher getJobLauncher() throws Exception {
-//        SimpleJobLauncher simpleJobLauncher = new SimpleJobLauncher();
-//        simpleJobLauncher.setTaskExecutor(taskExecutor);
-//        return simpleJobLauncher;
-//    }
 }
