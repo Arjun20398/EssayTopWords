@@ -1,7 +1,6 @@
 package firefly.jobs.processors;
 
-import firefly.exceptions.TooManyRequestsError;
-import firefly.models.ExponentialBackOffQueueProcessor;
+import firefly.crawl.ExponentialBackOffQueueProcessor;
 import firefly.services.DictionaryService;
 import firefly.services.EssayReaderService;
 import firefly.utils.CommonUtils;
@@ -9,7 +8,6 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,10 +30,10 @@ public class EssayProcessor implements ItemProcessor<List<String>, Map<String,Lo
     public Map<String,Long> readBatchEssaysOnline(List<String> essayUrls) {
         long time = System.currentTimeMillis();
         List<String> words = new ArrayList<>();
-        ExponentialBackOffQueueProcessor exponentialBackOffQueueProcessor =
-            new ExponentialBackOffQueueProcessor(new LinkedList<>(essayUrls), essayReaderService);
+        ExponentialBackOffQueueProcessor<String> exponentialBackOffQueueProcessor =
+            new ExponentialBackOffQueueProcessor<>(new LinkedList<>(essayUrls), essayReaderService);
         while (exponentialBackOffQueueProcessor.urlsPendingToProcess()){
-            String document = exponentialBackOffQueueProcessor.processFront();
+            String document = exponentialBackOffQueueProcessor.processFront(String.class);
             words.addAll(CommonUtils.findWordsInDocument(document)
                 .stream().filter(word -> dictionaryService.isValidWord(word))
                 .collect(Collectors.toList()));

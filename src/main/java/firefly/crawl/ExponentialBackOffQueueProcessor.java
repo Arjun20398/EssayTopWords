@@ -1,4 +1,4 @@
-package firefly.models;
+package firefly.crawl;
 
 import firefly.constants.Constant;
 import firefly.exceptions.TooManyRequestsError;
@@ -6,10 +6,9 @@ import firefly.services.EssayReaderService;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.logging.log4j.util.Strings;
 
 @Slf4j
-public class ExponentialBackOffQueueProcessor {
+public class ExponentialBackOffQueueProcessor<T> implements ExponentialBackOffQueue<T> {
 
     private Queue<String> urlQueue;
     private Integer waitTime;
@@ -22,25 +21,26 @@ public class ExponentialBackOffQueueProcessor {
         this.essayReaderService = essayReaderService;
     }
 
-    public String processFront() {
-        String htmlDocument = Strings.EMPTY;
+    @Override
+    public T processFront(Class<T> tClass) {
+        T tResponse = null;
         String url = this.urlQueue.poll();
         try {
             TimeUnit.SECONDS.sleep(this.waitTime);
-            htmlDocument = essayReaderService.readEssaysOnline(url);
+            tResponse = essayReaderService.readEssaysOnline(url,tClass);
             if(this.waitTime != 1){
                 this.waitTime /= 2;
-                log.info("changing wait time to {}", this.waitTime);
+                log.info("Reducing wait time to half {}", this.waitTime);
             }
         } catch (TooManyRequestsError error) {
-            log.error("TooManyRequestsError: changing waitTime to {}", this.waitTime * 2);
+            log.error("TooManyRequestsError: doubling waitTime to {}", this.waitTime * 2);
             this.waitTime *= 2;
             this.urlQueue.add(url);
         } catch (Exception e) {
             log.error("Exception: {}", e.getMessage());
             this.urlQueue.add(url);
         }
-        return htmlDocument;
+        return tResponse;
     }
 
     public Boolean urlsPendingToProcess(){

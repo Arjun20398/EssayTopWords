@@ -41,7 +41,6 @@ public class EssayProcessJob {
     @Bean("EssayProcessJob")
     public Job essayProcessJob(JobBuilderFactory jobBuilderFactory,
                                @Qualifier("urlReadStep") Step urlReadStep,
-                               @Qualifier("documentProcessStep") Step documentProcessStep,
                                @Qualifier("countWordStep") Step wordCountStep) {
 
         return jobBuilderFactory.get("EssayProcessJobBuilder")

@@ -16,10 +16,10 @@ public class DataCrawlingService {
 
     private final static RestTemplate restTemplate = new RestTemplate();
 
-    public String getEssay(String url) {
-        String htmlDocument = Strings.EMPTY;
+    public <T> T getEssay(String url, Class<T> tClass) {
+        T htmlDocument = null;
         try {
-            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+            ResponseEntity<T> response = restTemplate.getForEntity(url, tClass);
             if (HttpStatus.OK.value() == response.getStatusCodeValue()) {
                 htmlDocument = response.getBody();
             } else if (Constant.TOO_MANY_REQUEST_STATUS == response.getStatusCodeValue()) {
@@ -29,7 +29,6 @@ public class DataCrawlingService {
             }
         } catch (HttpClientErrorException e){
             log.info("Essay {} not found", url);
-            htmlDocument = "NOT_FOUND";
         }
         return htmlDocument;
     }

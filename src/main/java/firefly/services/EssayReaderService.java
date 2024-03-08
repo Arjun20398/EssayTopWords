@@ -33,11 +33,11 @@ public class EssayReaderService {
 
     @Async("customTaskExecutor")
     public CompletableFuture<String> readEssaysOnlineAsync(String url){
-        return CompletableFuture.completedFuture(dataCrawlingService.getEssay(url));
+        return CompletableFuture.completedFuture(dataCrawlingService.getEssay(url, String.class));
     }
 
-    public String readEssaysOnline(String url){
-        return dataCrawlingService.getEssay(url);
+    public <T> T readEssaysOnline(String url, Class<T> tClass){
+        return dataCrawlingService.getEssay(url, tClass);
     }
 
     @Async("customTaskExecutor")
