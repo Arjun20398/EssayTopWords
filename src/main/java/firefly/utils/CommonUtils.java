@@ -48,12 +48,15 @@ public class CommonUtils {
     }
 
     public static List<String> findWordsInDocument(String htmlDocument){
+        List<String> words = new ArrayList<>();
+        if(Strings.isEmpty(htmlDocument)){
+            return words;
+        }
         final Matcher matcher = Constant.PARA_PATTERN.matcher(htmlDocument);
         List<String> paragraphs = new ArrayList<>();
         while (matcher.find()) {
             paragraphs.add(matcher.group(1).replaceAll(Constant.TAGS_REGEX, Strings.EMPTY).toLowerCase());
         }
-        List<String> words = new ArrayList<>();
         paragraphs.forEach(para -> {
             words.addAll(Arrays.asList(para.split(Constant.SPACE)));
         });
